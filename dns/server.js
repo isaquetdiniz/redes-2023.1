@@ -1,7 +1,7 @@
 import { createSocket } from "node:dgram";
 import { randomUUID as uuid } from "node:crypto";
 
-class DNS {
+class DNSServer {
   port;
   server;
   services = {};
@@ -125,4 +125,4 @@ class DNS {
 }
 
 const DNS_PORT = 2222;
-new DNS(DNS_PORT);
+new DNSServer(DNS_PORT);

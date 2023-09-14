@@ -1,59 +1,76 @@
 import { createSocket } from "node:dgram";
 
-const client = createSocket("udp4");
+export class DNSClient {
+  dnsServerPort = 2222;
+  dnsServerHostName = "localhost";
+  client;
 
-const port = 2222;
-const hostname = "localhost";
+  constructor() {
+    this.client = createSocket("udp4");
 
-client.on("message", (message, info) => {
-  console.log(
-    "Message received:",
-    info.address,
-    "Port:",
-    info.port,
-    "Size:",
-    info.size
-  );
-
-  console.log("Message from server", message.toString());
-});
-
-client.send("query:testedoisaque", port, hostname, (err) => {
-  if (err) {
-    console.error("Failed to send packet !!");
-  } else {
-    console.log("Packet send !!");
+    this.addHandleMessageReceived();
   }
-});
 
-client.send("add:testedoisaque:2323:localhost", port, hostname, (err) => {
-  if (err) {
-    console.error("Failed to send packet !!");
-  } else {
-    console.log("Packet send !!");
-  }
-});
+  addHandleMessageReceived() {
+    this.client.on("message", (message, info) => {
+      console.log(
+        "Message received:",
+        info.address,
+        "Port:",
+        info.port,
+        "Size:",
+        info.size
+      );
 
-client.send("query:testedoisaque", port, hostname, (err) => {
-  if (err) {
-    console.error("Failed to send packet !!");
-  } else {
-    console.log("Packet send !!");
-  }
-});
+      console.log("Message from server:", message.toString());
 
-client.send("remove:testedoisaque", port, hostname, (err) => {
-  if (err) {
-    console.error("Failed to send packet !!");
-  } else {
-    console.log("Packet send !!");
+      this.client.close();
+      this.client = null;
+    });
   }
-});
 
-client.send("query:testedoisaque", port, hostname, (err) => {
-  if (err) {
-    console.error("Failed to send packet !!");
-  } else {
-    console.log("Packet send !!");
+  query(serviceName) {
+    this.sendMessage(
+      "query:" + serviceName,
+      this.dnsServerPort,
+      this.dnsServerHostName
+    );
+    return;
   }
-});
+
+  add(serviceName, port, host) {
+    this.sendMessage(
+      "add:" + serviceName + ":" + port + ":" + host,
+      this.dnsServerPort,
+      this.dnsServerHostName
+    );
+    return;
+  }
+
+  remove(serviceName) {
+    this.sendMessage(
+      "remove:" + serviceName,
+      this.dnsServerPort,
+      this.dnsServerHostName
+    );
+    return;
+  }
+
+  sendMessage(message, port, hostname) {
+    if (!this.client) {
+      this.client = createSocket("udp4");
+
+      this.addHandleMessageReceived();
+    }
+
+    this.client.send(message, port, hostname, (err) => {
+      if (err) {
+        console.error("Failed to send packet !!");
+      } else {
+        console.log("Packet send !!");
+      }
+    });
+
+    return;
+  }
+}
