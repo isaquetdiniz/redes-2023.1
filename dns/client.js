@@ -27,18 +27,7 @@ export class DNSClient {
     this.client.on("message", (message) => {
       const messageString = message.toString();
 
-      const { id, type, serviceName, port, host, code } =
-        JSON.parse(messageString);
-
-      console.log(
-        "Message from server:",
-        id,
-        type,
-        serviceName,
-        port,
-        host,
-        code
-      );
+      const { id, serviceName, port, host, code } = JSON.parse(messageString);
 
       this.queries[id] = { serviceName, port, host, code };
     });
@@ -105,7 +94,6 @@ export class DNSClient {
           console.error("Failed to send packet !!");
           reject();
         } else {
-          console.log("Packet send !!");
           resolve();
         }
       });

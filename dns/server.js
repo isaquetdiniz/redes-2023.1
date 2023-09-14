@@ -43,8 +43,6 @@ class DNSServer {
 
       const { id, type, serviceName, port, host } = JSON.parse(messageString);
 
-      console.log(id, "Message received:", messageString);
-
       const desiredOperation = this.operations[type];
 
       if (!desiredOperation) {
@@ -106,8 +104,6 @@ class DNSServer {
     this.server.send(JSON.stringify(message), port, address, (err) => {
       if (err) {
         console.error(message.id, "Failed to send response");
-      } else {
-        console.log(message.id, "Response send successfully");
       }
     });
   }
