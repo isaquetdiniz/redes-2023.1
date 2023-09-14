@@ -42,17 +42,12 @@ class TCPServer {
         "CONNECTED: " + connection.remoteAddress + ":" + connection.remotePort
       );
 
-      connection.on("data", (connection) => {
-        console.log(connection);
-        console.log(
-          "DATA FROM: " +
-            connection.remoteAddress +
-            ":" +
-            connection.remotePort +
-            connection
-        );
+      connection.on("data", (data) => {
+        console.log("Cliente pergunta: " + data);
 
-        connection.write(this.application.getDays());
+        const days = String(this.application.getDays());
+
+        connection.write(days);
       });
     });
   }
