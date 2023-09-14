@@ -1,5 +1,4 @@
 import { createSocket } from "node:dgram";
-import { randomUUID as uuid } from "node:crypto";
 
 class DNSServer {
   port;
@@ -40,85 +39,75 @@ class DNSServer {
 
   addHandleMessage() {
     this.server.on("message", (message, info) => {
-      const messageId = uuid();
       const messageString = message.toString();
 
-      console.log(messageId, "Message received:", messageString);
+      const { id, type, serviceName, port, host } = JSON.parse(messageString);
 
-      const [operation, serviceName, port, host] = messageString.split(":");
+      console.log(id, "Message received:", messageString);
 
-      const desiredOperation = this.operations[operation];
+      const desiredOperation = this.operations[type];
 
       if (!desiredOperation) {
-        this.sendMessage(messageId, "Invalid option", info.port, info.address);
         return;
       }
 
       if (desiredOperation === "query") {
-        return this.query(messageId, serviceName, info);
+        return this.query(id, serviceName, info);
       }
 
       if (desiredOperation === "add") {
-        return this.add(messageId, serviceName, host, port, info);
+        return this.add(serviceName, host, port);
       }
 
       if (desiredOperation === "remove") {
-        return this.remove(messageId, serviceName, info);
+        return this.remove(serviceName);
       }
     });
   }
 
-  query(messageId, serviceName, info) {
+  query(id, serviceName, info) {
     const serviceFound = this.getService(serviceName);
 
     if (!serviceFound) {
-      this.sendMessage(messageId, "Service not found", info.port, info.address);
+      this.sendMessage(
+        { id, type: "query", code: 404 },
+        info.port,
+        info.address
+      );
       return;
     }
 
     this.sendMessage(
-      messageId,
-      JSON.stringify(serviceFound),
+      { id, type: "query", ...serviceFound },
       info.port,
       info.address
     );
-
-    return;
   }
 
-  add(messageId, serviceName, host, port, info) {
+  add(serviceName, host, port) {
     this.services[serviceName] = { port, host };
-
-    this.sendMessage(messageId, "Service added", info.port, info.address);
-
-    return;
   }
 
-  remove(messageId, serviceName, info) {
+  remove(serviceName) {
     const serviceFound = this.getService(serviceName);
 
     if (!serviceFound) {
-      this.sendMessage(messageId, "Service not found", info.port, info.address);
       return;
     }
 
     Reflect.deleteProperty(this.services, serviceName);
-
-    this.sendMessage(messageId, "Service removed", info.port, info.address);
-
-    return;
   }
 
   getService(serviceName) {
     return this.services[serviceName];
   }
 
-  sendMessage(messageId, message, port, address) {
-    this.server.send(message, port, address, (err) => {
+  sendMessage(message, port, address) {
+    this.server.send(JSON.stringify(message), port, address, (err) => {
       if (err) {
-        console.error(messageId, "Failed to send response");
+        console.error(message.id, "Failed to send response");
       } else {
-        console.log(messageId, "Response send successfully");
+        console.log(message.id, "Response send successfully");
       }
     });
   }

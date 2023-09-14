@@ -1,76 +1,114 @@
 import { createSocket } from "node:dgram";
-
+import { Message } from "./message.js";
 export class DNSClient {
   dnsServerPort = 2222;
   dnsServerHostName = "localhost";
   client;
+  queries = {};
 
-  constructor() {
+  constructor() {}
+
+  openClient() {
+    if (this.client) return;
+
     this.client = createSocket("udp4");
 
     this.addHandleMessageReceived();
   }
 
+  closeClient() {
+    if (!this.client) return;
+
+    this.client.close();
+    this.client = null;
+  }
+
   addHandleMessageReceived() {
-    this.client.on("message", (message, info) => {
+    this.client.on("message", (message) => {
+      const messageString = message.toString();
+
+      const { id, type, serviceName, port, host, code } =
+        JSON.parse(messageString);
+
       console.log(
-        "Message received:",
-        info.address,
-        "Port:",
-        info.port,
-        "Size:",
-        info.size
+        "Message from server:",
+        id,
+        type,
+        serviceName,
+        port,
+        host,
+        code
       );
 
-      console.log("Message from server:", message.toString());
-
-      this.client.close();
-      this.client = null;
+      this.queries[id] = { serviceName, port, host, code };
     });
   }
 
-  query(serviceName) {
-    this.sendMessage(
-      "query:" + serviceName,
-      this.dnsServerPort,
-      this.dnsServerHostName
-    );
-    return;
-  }
+  async query(serviceName) {
+    this.openClient();
 
-  add(serviceName, port, host) {
-    this.sendMessage(
-      "add:" + serviceName + ":" + port + ":" + host,
-      this.dnsServerPort,
-      this.dnsServerHostName
-    );
-    return;
-  }
+    const message = new Message("query", serviceName);
 
-  remove(serviceName) {
-    this.sendMessage(
-      "remove:" + serviceName,
-      this.dnsServerPort,
-      this.dnsServerHostName
-    );
-    return;
-  }
+    await this.sendMessage(message, this.dnsServerPort, this.dnsServerHostName);
 
-  sendMessage(message, port, hostname) {
-    if (!this.client) {
-      this.client = createSocket("udp4");
+    return new Promise((resolve, reject) => {
+      const interval = setInterval(() => {
+        const hasResponse = this.queries[message.id];
 
-      this.addHandleMessageReceived();
-    }
+        if (hasResponse?.code === 404) {
+          resolve(null);
+          this.closeClient();
+          clearInterval(interval);
+        }
 
-    this.client.send(message, port, hostname, (err) => {
-      if (err) {
-        console.error("Failed to send packet !!");
-      } else {
-        console.log("Packet send !!");
-      }
+        if (hasResponse) {
+          resolve(hasResponse);
+          this.closeClient();
+          clearInterval(interval);
+        }
+      }, 100);
     });
+  }
+
+  async add(serviceName, port, host) {
+    this.openClient();
+
+    await this.sendMessage(
+      new Message("add", serviceName, port, host),
+      this.dnsServerPort,
+      this.dnsServerHostName
+    );
+
+    this.closeClient();
 
     return;
+  }
+
+  async remove(serviceName) {
+    this.openClient();
+
+    await this.sendMessage(
+      new Message("remove", serviceName),
+      this.dnsServerPort,
+      this.dnsServerHostName
+    );
+
+    this.closeClient();
+
+    return;
+  }
+
+  async sendMessage(message, port, hostname) {
+    return new Promise((resolve, reject) => {
+      this.client.send(JSON.stringify(message), port, hostname, (err) => {
+        if (err) {
+          console.error("Failed to send packet !!");
+          reject();
+        } else {
+          console.log("Packet send !!");
+          resolve();
+        }
+      });
+    });
   }
 }
