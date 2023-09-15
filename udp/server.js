@@ -49,9 +49,9 @@ class UDPServer {
 
       console.log("Cliente pergunta: " + messageString);
 
-      const days = String(this.application.getDays());
+      const messageDays = this.application.getDays();
 
-      this.server.send(days, info.port, info.address, (err) => {
+      this.server.send(messageDays, info.port, info.address, (err) => {
         if (err) {
           console.error(message.id, "Failed to send response");
         }

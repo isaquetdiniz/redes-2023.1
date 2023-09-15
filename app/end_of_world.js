@@ -2,6 +2,6 @@ export class EndOfWorldGame {
   constructor() {}
 
   getDays() {
-    return Math.floor(Math.random() * 365 * 20);
+    return "Faltam " + Math.floor(Math.random() * 365 * 20) + " dias!";
   }
 }

@@ -43,11 +43,17 @@ class TCPServer {
       );
 
       connection.on("data", (data) => {
-        console.log("Cliente pergunta: " + data);
+        const dataString = data.toString();
 
-        const days = String(this.application.getDays());
+        console.log("Cliente pergunta: " + dataString + "\n");
 
-        connection.write(days);
+        const questions = dataString.split("?");
+
+        for (let i = 0; i < questions.length - 1; i += 1) {
+          const message = this.application.getDays();
+
+          connection.write(message);
+        }
       });
     });
   }

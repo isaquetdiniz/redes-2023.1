@@ -4,9 +4,10 @@ import { createSocket } from "node:dgram";
 class UDPClient {
   client;
 
-  constructor(host, port) {
+  constructor(host, port, number) {
     this.client = createSocket("udp4");
 
+    console.time(number);
     this.client.send("Quantos dias para o fim do mundo?", port, host, (err) => {
       if (err) {
         console.error("Failed to send packet !!");
@@ -14,9 +15,10 @@ class UDPClient {
     });
 
     this.client.on("message", (message) => {
+      console.timeEnd(number);
       const messageString = message.toString();
 
-      console.log("Faltam ", messageString, "dias");
+      console.log(messageString);
     });
   }
 }
@@ -27,4 +29,8 @@ const dnsClient = new DNSClient();
 
 const { host, port } = await dnsClient.query(serverName);
 
-new UDPClient(host, port);
+new UDPClient(host, port, 1);
+new UDPClient(host, port, 2);
+new UDPClient(host, port, 3);
+new UDPClient(host, port, 4);
+new UDPClient(host, port, 5);
