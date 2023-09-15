@@ -31,8 +31,6 @@ const dnsClient = new DNSClient();
 
 const { host, port } = await dnsClient.query(serverName);
 
-new TCPClient(host, port, 1);
-new TCPClient(host, port, 2);
-new TCPClient(host, port, 3);
-new TCPClient(host, port, 4);
-new TCPClient(host, port, 5);
+for (let i = 0; i <= 30; i += 1) {
+  new TCPClient(host, port, i);
+}

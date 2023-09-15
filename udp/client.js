@@ -29,8 +29,6 @@ const dnsClient = new DNSClient();
 
 const { host, port } = await dnsClient.query(serverName);
 
-new UDPClient(host, port, 1);
-new UDPClient(host, port, 2);
-new UDPClient(host, port, 3);
-new UDPClient(host, port, 4);
-new UDPClient(host, port, 5);
+for (let i = 0; i <= 30; i += 1) {
+  new UDPClient(host, port, i);
+}
